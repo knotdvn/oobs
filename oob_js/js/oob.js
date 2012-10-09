@@ -8,7 +8,7 @@
 
 //allocate an ARRAY of size  and default value of essence
 //note index 10 returns array[0-9]
-function prep(size,essence){
+function prep(size, essence){
 	var construct = new Array(size);
 	for(iter = 0; iter < size; iter++){
 		construct[iter] = essence;
@@ -16,6 +16,18 @@ function prep(size,essence){
 	console.log(construct);
 	return construct;
 }//end prep allocation
+
+//returns an array of size num
+//filled with unique new oobs
+function seed_oobs(num){
+	var posse = new Array(num);
+	for(iter = 0; iter < num; iter++){
+		posse[iter] = new oob();
+	}//end for array
+	return posse;
+}//end function seed_oobs
+
+
 
 /**
  * Returns a random INTEGER between 1 and entropy value
@@ -53,7 +65,7 @@ function nomen(){
 	special_endings[11] = "qu";
 	
 	var poke = first.charAt( chaos(24) );
-	var nameN = 2 + chaos(7);
+	var nameN = 2 + chaos(5);
 	
 	
 	//we have our first letter!
@@ -79,12 +91,7 @@ function nomen(){
 }//end function nomen
 
 
-//lets make sure we get some good name-sounding-things
-function test_nomen(){
-	for(j = 0; j < 100; j++){
-		console.log( 'Name: ' + nomen() );
-	}//end for 100
-}//end function test_nomen
+
 
 
 //------------
@@ -112,7 +119,7 @@ function oob (){
 	pandemonium++;
 	
 	//lets give the oob some personal details
-	this.name = '';
+	this.name = nomen();
 	this.age = 0;
 	this.face ="(0_o)";
 	//oobs live in a violent world
@@ -147,12 +154,19 @@ function oob (){
 		'soul="' + this.soul +
 		'" name="' + this.name + 
 		'" age="' + this.age +
-		'" attack"' + this.attack +
-		'" defend"' + this.defend +
+		'" attack="' + this.attack +
+		'" defend="' + this.defend +
 		'">' +
-		'<p>' +
-		this.face +
-		'</p>' +
+			'<p>' +
+				this.face +
+			'</p>' +
+			
+			'<div class="id-card">' +
+				'<h1>' + 
+					this.name +
+				'</h1>' +
+			'</div>' +
+			
 		'</div>';
 		
 		return skeleton;
@@ -178,21 +192,21 @@ function conflict(aggressor, defender){
 
 function oob_system(){
 	
-	ark = prep(100,new oob);
-	
+	ark = seed_oobs(10);
+	$(ark).each(function(){
+		
+		$('#world').append(this.body());	
+		this.eat();
+	});
 	
 }//end function oob_system
 
 jQuery(document).ready(function($){
 
 	alert('oob Ready');
-	test_nomen();
-	//$(ark).each(function(){
-		//$('#world').append(this.body());	
-		//this.eat();
-	//});
+	oob_system();
+	
 	
 	
 	
 });//end document ready
-
