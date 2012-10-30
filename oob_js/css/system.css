@@ -1,0 +1,28 @@
+
+#toolbar{
+	padding:20px;
+	position:fixed;
+	top: 0px;
+	left: 0px;
+}
+#toolbox{
+	background-color: #FFFF00;
+	color: black;
+	z-index:999;
+	width:100%;
+}
+
+#toolbox:hover #log{
+	display:block;
+}
+
+#log{
+	display:none;
+}
+
+#world{
+	margin-top:50px;
+	float:left;
+	clear:both;
+	position:relative;
+}
