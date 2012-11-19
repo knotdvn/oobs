@@ -1,5 +1,5 @@
 /**
- * @author Verb Blurber
+ * @author dvn
  */
 
 jQuery(document).ready(function($){

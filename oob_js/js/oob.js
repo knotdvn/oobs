@@ -104,6 +104,10 @@ function nomen(){
 
 //the pandemonium of souls
 var pandemonium = 0;//This is really just the index/id#
+//pandemonium - 1 = the last index 
+
+//an array for all of the oobs 
+var ark = null; 
 
 //------------
 //Globals END
@@ -174,17 +178,39 @@ function oob (){
 }//end oob class
 
 function conflict(aggressor, defender){
-	var strike = agressor.attack + chaos(4);
+	var strike = aggressor.attack + chaos(4);
 	var block = defender.defend + chaos(4);
 	
 	resolved = strike - block;
 	if(resolved > 0){
-		
-	}//end resolved
+	//agressor wins	
+		defender.health =- 2;
+	}else{
+		aggressor.health =- 1;
+	}//end else defender wins
+	
+	//this world is skewed, attackers do more damage when successful
+	//and lose less health when unsuccessful
 }//end function conflict/fight
 
 
-
+//given a list of oobs and an oob to be excluded from search
+//returns an oob who is found
+function find( seeker, list ){
+	var found = null;
+	var entrope;//random oob
+	var expire = 100;
+	var goal = false;
+	while (!goal && expire-- != 0){
+		entrope = (chaos(pandemonium) - 1);
+		found = list[entrope];
+		if(found !== seeker){
+			goal = true;
+		}//end if found an oob
+		
+	}//end while not goal
+	
+}//end function find
 
 
 
@@ -197,6 +223,8 @@ function oob_system(){
 		
 		$('#world').append(this.body());	
 		this.eat();
+		console.log(conflict(this, this));
+		console.log( this.name + " found " +  find( this , ark) );
 	});
 	
 }//end function oob_system

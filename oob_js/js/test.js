@@ -1,5 +1,5 @@
 /**
- * @author Verb Blurber
+ * @author dvn
  */
 
 
@@ -124,6 +124,6 @@ function is_memberP(letter , vowels){
 }//end is vowelP
 
 var miller = 4 + chaos(5);
-	//this is the programmers version of millers magic number 
+	//this is the programmers version of george millers magic number 
 	// 	7 ( + or - ) 2 = [5,6,7,8,9] = 4 + [1,2,3,4,5]
 	
