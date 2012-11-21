@@ -166,11 +166,9 @@ function oob (){
 			'</p>' +
 			
 			'<div class="id-card">' +
-				'<h1>' + 
-					this.name +
-				'</h1>' +
+				'<h1>' +  this.name +'</h1>' +
+				'<h2>Health: ' + this.health + '</h2>' +
 			'</div>' +
-			
 		'</div>';
 		
 		return skeleton;
@@ -184,9 +182,12 @@ function conflict(aggressor, defender){
 	resolved = strike - block;
 	if(resolved > 0){
 	//agressor wins	
-		defender.health =- 2;
+		defender.health--;
+		defender.health--;
+		$('#log').append('<p>' + aggressor.name + aggressor.health + ' struck ' + defender.name + defender.health + '!</p>');
 	}else{
-		aggressor.health =- 1;
+		aggressor.health --;
+		$('#log').append('<p>' + defender.name + defender.health + ' blocked ' + aggressor.name  + aggressor.health + '!</p>');
 	}//end else defender wins
 	
 	//this world is skewed, attackers do more damage when successful
@@ -201,32 +202,50 @@ function find( seeker, list ){
 	var entrope;//random oob
 	var expire = 100;
 	var goal = false;
-	while (!goal && expire-- != 0){
+	while (!goal && expire-- !== 0){
 		entrope = (chaos(pandemonium) - 1);
 		found = list[entrope];
 		if(found !== seeker){
 			goal = true;
 		}//end if found an oob
-		
 	}//end while not goal
+	if(expire !== 0){
+		return found;
+	}else{
+		return null;
+	}//end if not expired, else not found
 	
 }//end function find
 
 
-
-//lets craft a little oob system shall we?
-
-function oob_system(){
+//lets test the oob find method
+function test_find_conflict(){
+	
 	
 	ark = seed_oobs(10);
 	$(ark).each(function(){
 		
 		$('#world').append(this.body());	
-		this.eat();
-		console.log(conflict(this, this));
-		console.log( this.name + " found " +  find( this , ark) );
-	});
+		//this.eat();
+		//test the find each oob finds 3 oobs, could be the same oob 
+		//but chaos decides
+		console.log( this.name + " found " +  find( this , ark).name );
+		console.log( this.name + " found " +  find( this , ark).name );
+		console.log( this.name + " found " +  find( this , ark).name );
 	
+	//now we'll test the conflict function
+	
+	 conflict(  this,  find(  this,  ark ) );
+	 	
+	
+	});//end for each oob
+}//end test find conflict
+
+//lets craft a little oob system shall we?
+
+function oob_system(){
+	
+test_find_conflict();
 }//end function oob_system
 
 jQuery(document).ready(function($){

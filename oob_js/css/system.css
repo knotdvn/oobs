@@ -18,6 +18,7 @@
 
 #log{
 	display:none;
+	overflow-y:scroll;
 }
 
 #world{
@@ -25,4 +26,5 @@
 	float:left;
 	clear:both;
 	position:relative;
+	z-index: -1;
 }
