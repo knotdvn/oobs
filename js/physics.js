@@ -34,17 +34,24 @@ export class PhysicsSystem {
     const livingOthers = oobs.filter(
       (candidate) => candidate !== oob && candidate.isAlive,
     );
+    const perceivedFood = foodParticles.filter(
+      (food) => distanceBetween(body, food) <= oob.perceptionRadius,
+    );
+    const perceivedOobs = livingOthers.filter(
+      (other) =>
+        distanceBetween(body, other.body) <= oob.perceptionRadius,
+    );
 
     return {
       touchingFood: foodParticles.filter((food) => circlesTouch(body, food)),
       touchingOobs: livingOthers.filter((other) =>
         circlesTouch(body, other.body),
       ),
-      nearestFood: this.findNearest(body, foodParticles),
+      nearestFood: this.findNearest(body, perceivedFood),
       nearestOob: this.findNearest(
         body,
-        livingOthers.map((other) => other.body),
-        livingOthers,
+        perceivedOobs.map((other) => other.body),
+        perceivedOobs,
       ),
     };
   }

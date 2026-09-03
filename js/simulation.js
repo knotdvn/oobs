@@ -4,30 +4,45 @@ import { RuleSystem } from "./rules.js";
 export const WORLD_BOUNDS = Object.freeze({ width: 1200, height: 700 });
 export const INITIAL_OOB_COUNT = 12;
 export const INITIAL_FOOD_COUNT = 100;
+export const PERCEPTION_PIXELS_PER_POINT = 60;
+export const MAX_VITALITY = 1000;
+export const TIME_VITALITY_COST = 1;
 
-export const OOB_COLORS = Object.freeze(
-  Array.from({ length: INITIAL_OOB_COUNT }, (_, index) => {
-    const lightness = Math.max(
-      0,
-      Number(
-        (100 - index * (100 / (INITIAL_OOB_COUNT - 1))).toFixed(2),
-      ),
-    );
-    const label =
-      index === 0
-        ? "White"
-        : index === INITIAL_OOB_COUNT - 1
-          ? "Black"
-          : "Gray " + String(index).padStart(2, "0");
+const VITALITY_SCALE = MAX_VITALITY / 10;
+const EXPLORATION_CANDIDATES = 10;
+const EXPLORATION_GRACE_CYCLES = 30;
+
+const SPECTRUM_COLOR_COUNT = INITIAL_OOB_COUNT - 2;
+const spectrumColors = Array.from(
+  { length: SPECTRUM_COLOR_COUNT },
+  (_, index) => {
+    const hue = index * (360 / SPECTRUM_COLOR_COUNT);
+    const usesLightFace = hue >= 234 && hue <= 270;
 
     return Object.freeze({
-      label,
-      lightness,
-      value: "hsl(0 0% " + lightness + "%)",
-      foreground: lightness < 46 ? "#fffdf6" : "#171713",
+      label: "Spectrum " + String(index + 1).padStart(2, "0"),
+      hue,
+      value: "hsl(" + hue + " 82% 58%)",
+      foreground: usesLightFace ? "#fffdf6" : "#171713",
     });
-  }),
+  },
 );
+
+export const OOB_COLORS = Object.freeze([
+  Object.freeze({
+    label: "White",
+    hue: null,
+    value: "#fff",
+    foreground: "#171713",
+  }),
+  ...spectrumColors,
+  Object.freeze({
+    label: "Black",
+    hue: null,
+    value: "#000",
+    foreground: "#fffdf6",
+  }),
+]);
 
 export const OOB_FACES = Object.freeze([
   "(0_o)",
@@ -83,38 +98,74 @@ function createName() {
   return name;
 }
 
-function perimeterPosition(index, total) {
-  const margin = 46;
-  const horizontalLength = WORLD_BOUNDS.width - margin * 2;
-  const verticalLength = WORLD_BOUNDS.height - margin * 2;
+const PERIMETER_MARGIN = 46;
+const MINIMUM_STARTING_DISTANCE = 62;
+
+function perimeterPositionAt(distance) {
+  const horizontalLength = WORLD_BOUNDS.width - PERIMETER_MARGIN * 2;
+  const verticalLength = WORLD_BOUNDS.height - PERIMETER_MARGIN * 2;
   const perimeter = 2 * (horizontalLength + verticalLength);
-  let distance = (index / total) * perimeter;
+  let perimeterDistance = ((distance % perimeter) + perimeter) % perimeter;
 
-  if (distance <= horizontalLength) {
-    return { x: margin + distance, y: margin };
-  }
-
-  distance -= horizontalLength;
-  if (distance <= verticalLength) {
+  if (perimeterDistance <= horizontalLength) {
     return {
-      x: WORLD_BOUNDS.width - margin,
-      y: margin + distance,
+      x: PERIMETER_MARGIN + perimeterDistance,
+      y: PERIMETER_MARGIN,
     };
   }
 
-  distance -= verticalLength;
-  if (distance <= horizontalLength) {
+  perimeterDistance -= horizontalLength;
+  if (perimeterDistance <= verticalLength) {
     return {
-      x: WORLD_BOUNDS.width - margin - distance,
-      y: WORLD_BOUNDS.height - margin,
+      x: WORLD_BOUNDS.width - PERIMETER_MARGIN,
+      y: PERIMETER_MARGIN + perimeterDistance,
     };
   }
 
-  distance -= horizontalLength;
+  perimeterDistance -= verticalLength;
+  if (perimeterDistance <= horizontalLength) {
+    return {
+      x: WORLD_BOUNDS.width - PERIMETER_MARGIN - perimeterDistance,
+      y: WORLD_BOUNDS.height - PERIMETER_MARGIN,
+    };
+  }
+
+  perimeterDistance -= horizontalLength;
   return {
-    x: margin,
-    y: WORLD_BOUNDS.height - margin - distance,
+    x: PERIMETER_MARGIN,
+    y: WORLD_BOUNDS.height - PERIMETER_MARGIN - perimeterDistance,
   };
+}
+
+function createRandomPerimeterPositions(total) {
+  const horizontalLength = WORLD_BOUNDS.width - PERIMETER_MARGIN * 2;
+  const verticalLength = WORLD_BOUNDS.height - PERIMETER_MARGIN * 2;
+  const perimeter = 2 * (horizontalLength + verticalLength);
+  const positions = [];
+  let attempts = 0;
+
+  while (positions.length < total && attempts < 5000) {
+    attempts += 1;
+    const candidate = perimeterPositionAt(Math.random() * perimeter);
+    const hasClearance = positions.every(
+      (position) =>
+        Math.hypot(candidate.x - position.x, candidate.y - position.y) >=
+        MINIMUM_STARTING_DISTANCE,
+    );
+
+    if (hasClearance) {
+      positions.push(candidate);
+    }
+  }
+
+  if (positions.length === total) {
+    return positions;
+  }
+
+  const randomOffset = Math.random() * perimeter;
+  return Array.from({ length: total }, (_, index) =>
+    perimeterPositionAt(randomOffset + (index / total) * perimeter),
+  );
 }
 
 export class Oob {
@@ -125,22 +176,24 @@ export class Oob {
     this.backgroundColor = color.value;
     this.foregroundColor = color.foreground;
     this.colorLabel = color.label;
-    this.colorLightness = color.lightness;
+    this.colorHue = color.hue;
     this.age = 0;
     this.attack = randomInteger(1, 10);
     this.defense = randomInteger(1, 10);
     this.movement = randomInteger(1, 10);
-    this.health = randomInteger(6, 10);
-    this.maxHealth = 10;
+    this.perception = randomInteger(1, 10);
+    this.perceptionRadius = this.perception * PERCEPTION_PIXELS_PER_POINT;
+    this.health = randomInteger(6, 10) * VITALITY_SCALE;
+    this.maxHealth = MAX_VITALITY;
     this.storedFood = 0;
     this.storageCapacity = 5;
     this.lastAction = "None yet";
     this.lastRule = null;
     this.lastMovement = 0;
-    this.heading = Math.atan2(
-      WORLD_BOUNDS.height / 2 - position.y,
-      WORLD_BOUNDS.width / 2 - position.x,
-    );
+    this.heading = Math.random() * Math.PI * 2;
+    this.explorationTarget = null;
+    this.explorationCyclesRemaining = 0;
+    this.stalledCycles = 0;
 
     const radius = 18 + this.defense * 0.35;
     this.body = {
@@ -168,7 +221,7 @@ export class FoodParticle {
     this.x = x;
     this.y = y;
     this.radius = randomInteger(3, 5);
-    this.nutrition = 3;
+    this.nutrition = 3 * VITALITY_SCALE;
   }
 }
 
@@ -190,9 +243,14 @@ export class OobWorld {
   reset() {
     this.cycle = 0;
     this.rules.resetStatistics();
+    const startingPositions = createRandomPerimeterPositions(INITIAL_OOB_COUNT);
     this.oobs = OOB_COLORS.map((color, index) => {
-      const position = perimeterPosition(index, INITIAL_OOB_COUNT);
-      return new Oob(index + 1, color, OOB_FACES[index], position);
+      return new Oob(
+        index + 1,
+        color,
+        OOB_FACES[index],
+        startingPositions[index],
+      );
     });
     this.food = Array.from(
       { length: INITIAL_FOOD_COUNT },
@@ -226,6 +284,30 @@ export class OobWorld {
     return this.oobs.find((oob) => oob.soul === soul) ?? null;
   }
 
+  createExplorationTarget(oob) {
+    const margin = oob.body.radius + 24;
+    let farthestTarget = null;
+    let farthestDistance = Number.NEGATIVE_INFINITY;
+
+    for (let index = 0; index < EXPLORATION_CANDIDATES; index += 1) {
+      const candidate = {
+        x: margin + Math.random() * (this.bounds.width - margin * 2),
+        y: margin + Math.random() * (this.bounds.height - margin * 2),
+      };
+      const distance = Math.hypot(
+        candidate.x - oob.body.x,
+        candidate.y - oob.body.y,
+      );
+
+      if (distance > farthestDistance) {
+        farthestTarget = candidate;
+        farthestDistance = distance;
+      }
+    }
+
+    return farthestTarget;
+  }
+
   planMovement(oob) {
     const perception = this.physics.perceive(oob, this.oobs, this.food);
     let target = perception.nearestFood;
@@ -235,6 +317,9 @@ export class OobWorld {
     }
 
     if (target) {
+      oob.explorationTarget = null;
+      oob.explorationCyclesRemaining = 0;
+      oob.stalledCycles = 0;
       const baseAngle = Math.atan2(
         target.y - oob.body.y,
         target.x - oob.body.x,
@@ -242,7 +327,43 @@ export class OobWorld {
       const jitter = (Math.random() - 0.5) * 0.22;
       oob.heading = baseAngle + jitter;
     } else {
-      oob.heading += (Math.random() - 0.5) * 0.7;
+      const madeLittleProgress =
+        oob.age > 1 &&
+        oob.lastMovement < Math.max(0.5, oob.movement * 0.2);
+      oob.stalledCycles = madeLittleProgress ? oob.stalledCycles + 1 : 0;
+
+      const currentTarget = oob.explorationTarget;
+      const distanceToTarget = currentTarget
+        ? Math.hypot(
+            currentTarget.x - oob.body.x,
+            currentTarget.y - oob.body.y,
+          )
+        : 0;
+      const needsNewTarget =
+        currentTarget === null ||
+        distanceToTarget <= oob.body.radius + oob.movement ||
+        oob.explorationCyclesRemaining <= 0 ||
+        oob.stalledCycles >= 3;
+
+      if (needsNewTarget) {
+        oob.explorationTarget = this.createExplorationTarget(oob);
+        const newDistance = Math.hypot(
+          oob.explorationTarget.x - oob.body.x,
+          oob.explorationTarget.y - oob.body.y,
+        );
+        oob.explorationCyclesRemaining =
+          Math.ceil(newDistance / Math.max(1, oob.movement)) +
+          EXPLORATION_GRACE_CYCLES;
+        oob.stalledCycles = 0;
+      }
+
+      oob.explorationCyclesRemaining -= 1;
+      oob.heading =
+        Math.atan2(
+          oob.explorationTarget.y - oob.body.y,
+          oob.explorationTarget.x - oob.body.x,
+        ) +
+        (Math.random() - 0.5) * 0.08;
     }
 
     return {
@@ -273,7 +394,22 @@ export class OobWorld {
       oob.body.velocity.y = 0;
     }
 
-    for (const oob of shuffle(activeOobs)) {
+    for (const oob of activeOobs) {
+      oob.takeDamage(TIME_VITALITY_COST);
+      oob.age += 1;
+
+      if (!oob.isAlive) {
+        oob.lastAction = "Vitality exhausted by time";
+        oob.lastRule = "time-vitality";
+        events.push({
+          action: "system",
+          rule: "time-vitality",
+          message: oob.name + " goes dormant as its vitality runs out.",
+        });
+      }
+    }
+
+    for (const oob of shuffle(activeOobs.filter((oob) => oob.isAlive))) {
       if (!oob.isAlive) {
         continue;
       }
@@ -296,7 +432,6 @@ export class OobWorld {
           intendedMovement,
           this.oobs,
         );
-        oob.age += 1;
       }
     }
 

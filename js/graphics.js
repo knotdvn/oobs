@@ -64,6 +64,12 @@ export class GraphicsSystem {
     context.setTransform(scaleX, 0, 0, scaleY, 0, 0);
     context.clearRect(0, 0, this.bounds.width, this.bounds.height);
     this.drawEnvironment(context, world);
+
+    const selectedOob = world.findOob(this.selectedSoul);
+    if (selectedOob?.isAlive) {
+      this.drawPerception(context, selectedOob);
+    }
+
     this.drawFood(context, world.food, time);
 
     for (const oob of world.oobs) {
@@ -108,6 +114,27 @@ export class GraphicsSystem {
     context.lineWidth = 2;
     context.beginPath();
     context.arc(centerX, centerY, 140, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
+  drawPerception(context, oob) {
+    const body = oob.body;
+
+    context.save();
+    context.fillStyle = "rgba(45, 85, 255, 0.035)";
+    context.strokeStyle = "rgba(23, 23, 19, 0.32)";
+    context.lineWidth = 1.5;
+    context.setLineDash([7, 9]);
+    context.beginPath();
+    context.arc(
+      body.x,
+      body.y,
+      oob.perceptionRadius,
+      0,
+      Math.PI * 2,
+    );
+    context.fill();
     context.stroke();
     context.restore();
   }

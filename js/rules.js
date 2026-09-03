@@ -4,6 +4,10 @@ export const ACTION_TYPES = Object.freeze({
   FIGHT: "fight",
 });
 
+const STORED_FOOD_VITALITY = 200;
+const FIGHT_DAMAGE = 200;
+const FIGHT_RECOIL = 100;
+
 function randomInteger(minimum, maximum) {
   return Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 }
@@ -31,10 +35,13 @@ function createRules() {
       applies: ({ oob, perception }) =>
         perception.touchingFood.length === 0 &&
         oob.storedFood > 0 &&
-        oob.health <= 7,
+        oob.health <= oob.maxHealth * 0.7,
       execute: ({ oob }) => {
         oob.storedFood -= 1;
-        const restored = Math.min(2, oob.maxHealth - oob.health);
+        const restored = Math.min(
+          STORED_FOOD_VITALITY,
+          oob.maxHealth - oob.health,
+        );
         oob.health += restored;
         return oob.name + " eats from storage and restores " + restored + " vitality.";
       },
@@ -73,15 +80,25 @@ function createRules() {
         const block = target.defense + randomInteger(1, 4);
 
         if (strike > block) {
-          target.takeDamage(2);
+          target.takeDamage(FIGHT_DAMAGE);
           return target.isAlive
-            ? oob.name + " strikes " + target.name + " for 2 vitality."
+            ? oob.name +
+                " strikes " +
+                target.name +
+                " for " +
+                FIGHT_DAMAGE +
+                " vitality."
             : oob.name + " sends " + target.name + " dormant.";
         }
 
-        oob.takeDamage(1);
+        oob.takeDamage(FIGHT_RECOIL);
         return oob.isAlive
-          ? target.name + " blocks " + oob.name + "; recoil costs 1 vitality."
+          ? target.name +
+              " blocks " +
+              oob.name +
+              "; recoil costs " +
+              FIGHT_RECOIL +
+              " vitality."
           : target.name + " blocks the attack and " + oob.name + " goes dormant.";
       },
     },

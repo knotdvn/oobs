@@ -29,6 +29,7 @@ const elements = {
   inspectorAttack: document.querySelector("#inspector-attack"),
   inspectorDefense: document.querySelector("#inspector-defense"),
   inspectorMovement: document.querySelector("#inspector-movement"),
+  inspectorPerception: document.querySelector("#inspector-perception"),
   inspectorFood: document.querySelector("#inspector-food"),
   inspectorAge: document.querySelector("#inspector-age"),
   inspectorMass: document.querySelector("#inspector-mass"),
@@ -126,6 +127,8 @@ function renderInspector() {
   elements.inspectorAttack.textContent = String(oob.attack);
   elements.inspectorDefense.textContent = String(oob.defense);
   elements.inspectorMovement.textContent = oob.movement + " px";
+  elements.inspectorPerception.textContent =
+    oob.perception + " · " + oob.perceptionRadius + " px";
   elements.inspectorFood.textContent =
     oob.storedFood + "/" + oob.storageCapacity;
   elements.inspectorAge.textContent = oob.age + " cycles";
@@ -135,8 +138,9 @@ function renderInspector() {
   elements.inspectorColor.textContent =
     oob.colorLabel +
     " · " +
-    oob.colorLightness.toFixed(2).replace(/\.?0+$/, "") +
-    "% lightness";
+    (oob.colorHue === null
+      ? oob.backgroundColor.toUpperCase()
+      : "hue " + oob.colorHue + "°");
   elements.inspectorColorSwatch.style.setProperty(
     "--oob-color",
     oob.backgroundColor,
