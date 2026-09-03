@@ -1,59 +1,228 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-        <title>Oobs</title>
-        <meta name="description" content="An Agent Based AI Experiment">
-        <meta name="viewport" content="width=device-width">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Oobs is a tiny, agent-based world with rules, movement, collision physics, and food."
+    >
+    <meta name="theme-color" content="#f3f0e8">
+    <title>Oobs — The Living Environment</title>
+    <link rel="icon" href="assets/oob-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/app.js" type="module"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#simulation">Skip to the simulation</a>
 
-        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="Oobs home">
+        <img src="assets/oob-mark.svg" width="42" height="42" alt="">
+        <span>Oobs</span>
+      </a>
+      <p class="header-note">Twelve beings. One shared world.</p>
+    </header>
 
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/main.css">
-        <link rel="stylesheet" href="css/oob.css">
-        <link rel="stylesheet" href="css/system.css">
+    <main id="simulation">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Agent-based micro-simulation</p>
+          <h1 id="page-title">A living world, one cycle at a time.</h1>
+        </div>
+        <p class="intro-copy">
+          Oobs move, collide, forage, store food, eat, and fight according to a
+          shared rule system. Click a being in the environment to inspect it.
+        </p>
+      </section>
 
-    </head>
-    <body>
-        <!--[if lt IE 7]>
-            <p class="chromeframe">You are using an outdated browser. <a href="http://browsehappy.com/">Upgrade your browser today</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to better experience this site.</p>
-        <![endif]-->
+      <section class="control-bar" aria-label="Simulation controls">
+        <div class="control-actions">
+          <button
+            class="button button--primary"
+            id="toggle-run"
+            type="button"
+            aria-pressed="false"
+          >
+            Run simulation
+          </button>
+          <button class="button" id="step-cycle" type="button">
+            Step one cycle
+          </button>
+          <button class="button button--quiet" id="reset-world" type="button">
+            Reset world
+          </button>
+        </div>
+        <p class="world-status" id="world-status" aria-live="polite">
+          World ready
+        </p>
+      </section>
 
-        <!-- Add your site or application content here -->
-     		
-	<div id="toolbar">
-		<ul id="toolbox">
-			<li>LOG</li>
-			<li>
-				<ul id="log">
-				</ul>
-			</li>
-		</ul>
-	</div>
+      <div class="workspace">
+        <section class="panel environment-panel" aria-labelledby="environment-title">
+          <header class="panel-header">
+            <div>
+              <p class="eyebrow">The environment</p>
+              <h2 id="environment-title">Perimeter Field 01</h2>
+            </div>
+            <dl class="world-summary" aria-label="Environment statistics">
+              <div>
+                <dt>Living</dt>
+                <dd id="living-count">12/12</dd>
+              </div>
+              <div>
+                <dt>Cycle</dt>
+                <dd id="cycle-count">0</dd>
+              </div>
+              <div>
+                <dt>Food</dt>
+                <dd id="food-count">100</dd>
+              </div>
+            </dl>
+          </header>
 
-		
-		
-        <p>Hello world! This is Oobs.</p>
-		
-		<div id="world">
-			
-		</div>
-		
-		<!-- End of content-->
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
-        <script>window.jQuery || document.write('<script src="js/lib/jquery-1.8.1.min.js"><\/script>')</script>
-        <script src="js/plugins.js"></script>
-        <script src="js/system.js"></script>
-         <script src="js/toolbox.js"></script>
-        <script src="js/oob.js"></script>
+          <div class="canvas-shell">
+            <canvas
+              id="world-canvas"
+              width="1200"
+              height="700"
+              tabindex="0"
+              aria-describedby="canvas-instructions"
+            >
+              This simulation requires a browser with canvas support.
+            </canvas>
+            <div class="canvas-key" aria-hidden="true">
+              <span><i class="key-dot key-dot--food"></i> Food</span>
+              <span><i class="key-dot key-dot--oob"></i> Oob</span>
+            </div>
+          </div>
+          <p class="canvas-instructions" id="canvas-instructions">
+            Click an oob to inspect it. When the environment is focused, use
+            the left and right arrow keys to select an oob.
+          </p>
+        </section>
 
-        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. 
-        <script>
-            var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
-            (function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
-            g.src=('https:'==location.protocol?'//ssl':'//www')+'.google-analytics.com/ga.js';
-            s.parentNode.insertBefore(g,s)}(document,'script'));
-        </script> -->
-    </body>
+        <div class="right-rail">
+          <section
+            class="panel inspector"
+            id="oob-inspector"
+            aria-labelledby="inspector-name"
+            hidden
+          >
+            <header class="inspector-header">
+              <div class="inspector-identity">
+                <span class="inspector-face" id="inspector-face" aria-hidden="true"></span>
+                <div>
+                  <p class="eyebrow" id="inspector-soul">Oob #1</p>
+                  <h2 id="inspector-name">Oob</h2>
+                </div>
+              </div>
+              <button
+                class="icon-button"
+                id="close-inspector"
+                type="button"
+                aria-label="Close oob details"
+              >
+                ×
+              </button>
+            </header>
+
+            <dl class="oob-stats">
+              <div>
+                <dt>Vitality</dt>
+                <dd id="inspector-health">0/10</dd>
+              </div>
+              <div>
+                <dt>Attack</dt>
+                <dd id="inspector-attack">0</dd>
+              </div>
+              <div>
+                <dt>Defense</dt>
+                <dd id="inspector-defense">0</dd>
+              </div>
+              <div>
+                <dt>Movement</dt>
+                <dd id="inspector-movement">0 px</dd>
+              </div>
+              <div>
+                <dt>Stored food</dt>
+                <dd id="inspector-food">0/5</dd>
+              </div>
+              <div>
+                <dt>Age</dt>
+                <dd id="inspector-age">0 cycles</dd>
+              </div>
+              <div>
+                <dt>Body mass</dt>
+                <dd id="inspector-mass">0</dd>
+              </div>
+              <div>
+                <dt>Last move</dt>
+                <dd id="inspector-last-move">0 px</dd>
+              </div>
+              <div class="oob-stats__wide">
+                <dt>Body color</dt>
+                <dd class="color-value">
+                  <i id="inspector-color-swatch" aria-hidden="true"></i>
+                  <span id="inspector-color">—</span>
+                </dd>
+              </div>
+              <div class="oob-stats__wide">
+                <dt>Last action</dt>
+                <dd id="inspector-action">None yet</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="panel rulebook" aria-labelledby="rules-title">
+            <header class="rail-header">
+              <div>
+                <p class="eyebrow">Decision maker</p>
+                <h2 id="rules-title">Rule order</h2>
+              </div>
+            </header>
+            <ol class="rule-list">
+              <li>
+                <span><strong>Eat</strong> touching food when hurt</span>
+                <b id="eat-rule-count">0</b>
+              </li>
+              <li>
+                <span><strong>Eat</strong> stored food when not touching food</span>
+              </li>
+              <li>
+                <span><strong>Store</strong> touching food for later</span>
+                <b id="store-rule-count">0</b>
+              </li>
+              <li>
+                <span><strong>Fight</strong> a colliding oob</span>
+                <b id="fight-rule-count">0</b>
+              </li>
+            </ol>
+          </section>
+
+          <aside class="panel log-panel" aria-labelledby="log-title">
+            <header class="rail-header rail-header--split">
+              <div>
+                <p class="eyebrow">Field notes</p>
+                <h2 id="log-title">World log</h2>
+              </div>
+              <button class="text-button" id="clear-log" type="button">
+                Clear
+              </button>
+            </header>
+            <ol
+              class="event-log"
+              id="event-log"
+              aria-live="polite"
+              aria-relevant="additions"
+            ></ol>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>Object-Oriented Beings · A dependency-free browser experiment</p>
+    </footer>
+  </body>
 </html>
